@@ -1,8 +1,98 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>CT Voxel-Rechner</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#2673d9">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Voxel-Rechner">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"><style>:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#17202a;background:#f4f6f8}*{box-sizing:border-box}body{margin:0;padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}.card{max-width:480px;margin:auto;background:#fff;border-radius:22px;padding:22px;box-shadow:0 6px 24px #0002}h1{font-size:24px;margin:0 0 6px}.sub{color:#65727e;margin:0 0 22px}.field{margin:16px 0}label{display:block;font-weight:700;margin-bottom:7px}input{width:100%;font-size:22px;padding:14px;border:2px solid #ccd4da;border-radius:12px;background:#fff7cc;outline:none}input:focus{border-color:#2673d9}.result{margin-top:22px;padding:22px;border-radius:16px;background:#dff4e5;text-align:center}.result small{display:block;font-weight:700}.big{font-size:42px;font-weight:800;margin-top:5px}.details{margin-top:16px;background:#f5f7f9;border-radius:14px;padding:14px;line-height:1.7}.row{display:flex;justify-content:space-between;gap:15px}.value{font-weight:700;text-align:right}.hint{font-size:12px;color:#65727e;margin-top:16px}</style></head><body><main class="card"><h1>CT Voxel-Rechner</h1><p class="sub">Maximal zulässige Voxelgrösse bestimmen</p><div class="field"><label for="tol">Toleranz [mm]</label><input id="tol" type="number" inputmode="decimal" step="0.001" placeholder="z. B. 0,100"></div><div class="field"><label for="wall">Dünnste Wandstärke [mm]</label><input id="wall" type="number" inputmode="decimal" step="0.001" placeholder="z. B. 0,400"></div><section class="result"><small>MAX. VOXELGRÖSSE</small><div class="big" id="max">– µm</div></section><section class="details"><div class="row"><span>aus Toleranz (50 %)</span><span class="value" id="tolOut">–</span></div><div class="row"><span>aus Wandstärke (20 %)</span><span class="value" id="wallOut">–</span></div><div class="row"><span>Massgebend</span><span class="value" id="rule">–</span></div></section><p class="hint">Berechnung: MIN(Toleranz × 0,5; Wandstärke × 0,2) × 1000</p></main><script>const tol=document.getElementById('tol'),wall=document.getElementById('wall'),maxEl=document.getElementById('max'),tolOut=document.getElementById('tolOut'),wallOut=document.getElementById('wallOut'),rule=document.getElementById('rule');function fmt(v){return new Intl.NumberFormat('de-CH',{maximumFractionDigits:1}).format(v)+' µm'}function calc(){const t=parseFloat(tol.value),w=parseFloat(wall.value),tv=Number.isFinite(t)&&t>=0?t*500:null,wv=Number.isFinite(w)&&w>=0?w*200:null;tolOut.textContent=tv===null?'–':fmt(tv);wallOut.textContent=wv===null?'–':fmt(wv);if(tv!==null&&wv!==null){maxEl.textContent=fmt(Math.min(tv,wv));rule.textContent=tv<wv?'Toleranz':wv<tv?'Wandstärke':'beide Kriterien'}else{maxEl.textContent='– µm';rule.textContent='–'}}tol.addEventListener('input',calc);wall.addEventListener('input',calc);if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'))}</script></body></html>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>CT Voxel-Rechner</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#2673d9">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Voxel-Rechner">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#17202a;background:#f4f6f8}
+    *{box-sizing:border-box}
+    body{margin:0;padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+    .card{max-width:480px;margin:auto;background:#fff;border-radius:22px;padding:22px;box-shadow:0 6px 24px #0002}
+    h1{font-size:24px;margin:0 0 6px}.sub{color:#65727e;margin:0 0 22px}.field{margin:16px 0}
+    label{display:block;font-weight:700;margin-bottom:7px}
+    input{width:100%;font-size:22px;padding:14px;border:2px solid #ccd4da;border-radius:12px;background:#fff7cc;outline:none}
+    input:focus{border-color:#2673d9}.result{margin-top:22px;padding:22px;border-radius:16px;background:#dff4e5;text-align:center}
+    .result small{display:block;font-weight:700}.big{font-size:42px;font-weight:800;margin-top:5px}
+    .details{margin-top:16px;background:#f5f7f9;border-radius:14px;padding:14px;line-height:1.7}
+    .row{display:flex;justify-content:space-between;gap:15px}.value{font-weight:700;text-align:right}.hint{font-size:12px;color:#65727e;margin-top:16px}
+  </style>
+</head>
+<body>
+<main class="card">
+  <h1>CT Voxel-Rechner</h1>
+  <p class="sub">Maximal zulässige Voxelgrösse bestimmen</p>
+  <div class="field">
+    <label for="tol">Toleranz [mm]</label>
+    <input id="tol" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 0,100 oder 0.100">
+  </div>
+  <div class="field">
+    <label for="wall">Dünnste Wandstärke [mm]</label>
+    <input id="wall" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 0,400 oder 0.400">
+  </div>
+  <section class="result">
+    <small>MAX. VOXELGRÖSSE</small>
+    <div class="big" id="max">– µm</div>
+  </section>
+  <section class="details">
+    <div class="row"><span>aus Toleranz (50 %)</span><span class="value" id="tolOut">–</span></div>
+    <div class="row"><span>aus Wandstärke (20 %)</span><span class="value" id="wallOut">–</span></div>
+    <div class="row"><span>Massgebend</span><span class="value" id="rule">–</span></div>
+  </section>
+  <p class="hint">Berechnung: MIN(Toleranz × 0,5; Wandstärke × 0,2) × 1000</p>
+</main>
+<script>
+  const tol = document.getElementById('tol');
+  const wall = document.getElementById('wall');
+  const maxEl = document.getElementById('max');
+  const tolOut = document.getElementById('tolOut');
+  const wallOut = document.getElementById('wallOut');
+  const rule = document.getElementById('rule');
+
+  function readNumber(value) {
+    const normalized = String(value).trim().replace(/\s/g, '').replace(',', '.');
+    if (normalized === '' || !/^\d*(?:\.\d*)?$/.test(normalized)) return null;
+    const number = Number(normalized);
+    return Number.isFinite(number) && number >= 0 ? number : null;
+  }
+
+  function fmt(value) {
+    return new Intl.NumberFormat('de-CH', {maximumFractionDigits: 1}).format(value) + ' µm';
+  }
+
+  function calc() {
+    const t = readNumber(tol.value);
+    const w = readNumber(wall.value);
+    const tv = t === null ? null : t * 500;
+    const wv = w === null ? null : w * 200;
+
+    tolOut.textContent = tv === null ? '–' : fmt(tv);
+    wallOut.textContent = wv === null ? '–' : fmt(wv);
+
+    if (tv !== null && wv !== null) {
+      maxEl.textContent = fmt(Math.min(tv, wv));
+      rule.textContent = tv < wv ? 'Toleranz' : wv < tv ? 'Wandstärke' : 'beide Kriterien';
+    } else {
+      maxEl.textContent = '– µm';
+      rule.textContent = '–';
+    }
+  }
+
+  tol.addEventListener('input', calc);
+  wall.addEventListener('input', calc);
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+  }
+</script>
+</body>
+</html>
